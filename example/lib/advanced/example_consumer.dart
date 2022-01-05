@@ -8,11 +8,17 @@ class ExampleConsumer extends BaseConsumerMock<ExampleModel> {
   ///
   ///
   ///
-  const ExampleConsumer() : super(const <String>[]);
+  const ExampleConsumer();
 
   ///
   ///
   ///
   @override
   ExampleModel fromJson(Map<String, dynamic> map) => ExampleModel.fromJson(map);
+
+  ///
+  ///
+  ///
+  @override
+  List<String> get routeName => <String>[];
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:folly_fields/folly_fields.dart';
 import 'package:folly_fields/util/hashable.dart';
 
@@ -19,12 +18,7 @@ abstract class AbstractModel<A> with Hashable {
   ///
   ///
   ///
-  AbstractModel({
-    this.id,
-    this.updatedAt,
-    this.deletedAt,
-    this.selected = false,
-  });
+  AbstractModel();
 
   ///
   ///
@@ -48,12 +42,9 @@ abstract class AbstractModel<A> with Hashable {
   ///
   ///
   ///
-  @mustCallSuper
   Map<String, dynamic> toMap() {
     Map<String, dynamic> map = <String, dynamic>{};
-    if (id != null) {
-      map[modelIdKey] = id;
-    }
+    if (id != null) map[modelIdKey] = id;
     return map;
   }
 
@@ -69,15 +60,18 @@ abstract class AbstractModel<A> with Hashable {
   int get hashCode => hashIterable(toMap().values);
 
   ///
+  /// Teste de exclusão de quando as entidades ainda não possuem id.
+  /// Anteriormente o cálculo do hash estava com uma divergência, mas agora
+  /// faremos novos testes para não precisar desse operador.
   ///
-  ///
+  /// Ocorreu um novo problema com a comparação dos objetos do menu.
   @override
   bool operator ==(Object other) => hashCode == other.hashCode;
 
   ///
   ///
   ///
-  String get listSearchTerm => toString();
+  String get searchTerm;
 
   ///
   ///

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:flutter/services.dart';
+import 'package:folly_fields/folly_fields.dart';
 import 'package:folly_fields/util/folly_utils.dart';
 import 'package:folly_fields/validators/date_time_validator.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -8,8 +8,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 ///
 ///
 ///
-class DateTimeField extends StatefulResponsive {
-  final String labelPrefix;
+class DateTimeField extends StatefulWidget {
+  final String prefix;
   final String label;
   final DateTimeEditingController? controller;
   final FormFieldValidator<DateTime>? validator;
@@ -35,15 +35,13 @@ class DateTimeField extends StatefulResponsive {
   final bool required;
   final InputDecoration? decoration;
   final EdgeInsets padding;
-  final DatePickerEntryMode initialDateEntryMode;
-  final DatePickerMode initialDatePickerMode;
-  final TimePickerEntryMode initialTimeEntryMode;
 
   ///
   ///
   ///
   const DateTimeField({
-    this.labelPrefix = '',
+    Key? key,
+    this.prefix = '',
     this.label = '',
     this.controller,
     this.validator,
@@ -55,7 +53,7 @@ class DateTimeField extends StatefulResponsive {
     this.focusNode,
     this.textInputAction,
     this.onFieldSubmitted,
-    this.scrollPadding = const EdgeInsets.all(20),
+    this.scrollPadding = const EdgeInsets.all(20.0),
     this.enableInteractiveSelection = true,
     this.firstDate,
     this.lastDate,
@@ -68,40 +66,21 @@ class DateTimeField extends StatefulResponsive {
     this.mask = '##/##/#### A#:C#',
     this.required = true,
     this.decoration,
-    this.padding = const EdgeInsets.all(8),
-    this.initialDateEntryMode = DatePickerEntryMode.calendar,
-    this.initialDatePickerMode = DatePickerMode.day,
-    this.initialTimeEntryMode = TimePickerEntryMode.dial,
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
-        super(
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
-        );
+    this.padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
+        super(key: key);
 
   ///
   ///
   ///
   @override
-  DateTimeFieldState createState() => DateTimeFieldState();
+  _DateTimeFieldState createState() => _DateTimeFieldState();
 }
 
 ///
 ///
 ///
-class DateTimeFieldState extends State<DateTimeField> {
+class _DateTimeFieldState extends State<DateTimeField> {
   DateTimeValidator? _validator;
   DateTimeEditingController? _controller;
   FocusNode? _focusNode;
@@ -183,9 +162,9 @@ class DateTimeFieldState extends State<DateTimeField> {
               border: const OutlineInputBorder(),
               filled: widget.filled,
               fillColor: widget.fillColor,
-              labelText: widget.labelPrefix.isEmpty
+              labelText: widget.prefix.isEmpty
                   ? widget.label
-                  : '${widget.labelPrefix} - ${widget.label}',
+                  : '${widget.prefix} - ${widget.label}',
               counterText: '',
             ))
         .applyDefaults(Theme.of(context).inputDecorationTheme)
@@ -203,8 +182,6 @@ class DateTimeFieldState extends State<DateTimeField> {
                             _effectiveController.dateTime ?? DateTime.now(),
                         firstDate: widget.firstDate ?? DateTime(1900),
                         lastDate: widget.lastDate ?? DateTime(2100),
-                        initialEntryMode: widget.initialDateEntryMode,
-                        initialDatePickerMode: widget.initialDatePickerMode,
                       );
 
                       fromButton = false;
@@ -223,7 +200,6 @@ class DateTimeFieldState extends State<DateTimeField> {
                         TimeOfDay? selectedTime = await showTimePicker(
                           context: context,
                           initialTime: initialTime,
-                          initialEntryMode: widget.initialTimeEntryMode,
                         );
 
                         if (selectedTime == null) {
@@ -243,7 +219,8 @@ class DateTimeFieldState extends State<DateTimeField> {
                         _effectiveFocusNode.requestFocus();
                       }
                     } catch (e, s) {
-                      if (kDebugMode) {
+                      if (FollyFields().isDebug) {
+                        // ignore: avoid_print
                         print('$e\n$s');
                       }
                     }
@@ -265,9 +242,7 @@ class DateTimeFieldState extends State<DateTimeField> {
 
                 String? message = _validator!.valid(value!);
 
-                if (message != null) {
-                  return message;
-                }
+                if (message != null) return message;
 
                 if (widget.validator != null) {
                   return widget.validator!(_validator!.parse(value));
@@ -278,11 +253,15 @@ class DateTimeFieldState extends State<DateTimeField> {
             : (_) => null,
         keyboardType: TextInputType.datetime,
         minLines: 1,
+        maxLines: 1,
+        obscureText: false,
         inputFormatters: _validator!.inputFormatters,
         textAlign: widget.textAlign,
         maxLength: widget.mask.length,
-        onSaved: (String? value) => widget.enabled && widget.onSaved != null
-            ? widget.onSaved!(_validator!.parse(value))
+        onSaved: widget.enabled
+            ? (String? value) => widget.onSaved != null
+                ? widget.onSaved!(_validator!.parse(value))
+                : null
             : null,
         enabled: widget.enabled,
         autovalidateMode: widget.autoValidateMode,
@@ -291,6 +270,7 @@ class DateTimeFieldState extends State<DateTimeField> {
         onFieldSubmitted: widget.onFieldSubmitted,
         autocorrect: false,
         enableSuggestions: false,
+        textCapitalization: TextCapitalization.none,
         scrollPadding: widget.scrollPadding,
         enableInteractiveSelection: widget.enableInteractiveSelection,
         readOnly: widget.readOnly,
@@ -330,5 +310,5 @@ class DateTimeEditingController extends TextEditingController {
   ///
   ///
   set dateTime(DateTime? dateTime) =>
-      text = dateTime == null ? '' : DateTimeValidator().format(dateTime);
+      text = (dateTime == null ? '' : DateTimeValidator().format(dateTime));
 }

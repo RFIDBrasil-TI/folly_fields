@@ -17,9 +17,8 @@ abstract class AbstractConsumer<T extends AbstractModel<Object>> {
   ///
   ///
   ///
-  @mustCallSuper
-  const AbstractConsumer(
-    this.routeName, {
+  const AbstractConsumer({
+    this.routeName = const <String>[],
     this.offlineTableName,
     this.offlineWhere,
     this.offlineWhereArgs,
@@ -54,9 +53,9 @@ abstract class AbstractConsumer<T extends AbstractModel<Object>> {
   ///
   ///
   Future<Map<T, String>> dropdownMap(
-    BuildContext context, {
-    Map<String, String> qsParam = const <String, String>{},
-  }) async {
+    BuildContext context,
+    Map<String, String> qsParam,
+  ) async {
     List<T> _list = await list(context, qsParam, false);
     return <T, String>{for (T e in _list) e: e.toString()};
   }

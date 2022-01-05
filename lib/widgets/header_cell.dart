@@ -11,9 +11,9 @@ class HeaderCell extends StatelessWidget {
   ///
   ///
   const HeaderCell({
-    required this.child,
-    this.flex = 1,
     Key? key,
+    this.flex = 1,
+    required this.child,
   }) : super(key: key);
 
   ///
@@ -25,7 +25,7 @@ class HeaderCell extends StatelessWidget {
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: 12,
+          horizontal: 12.0,
         ),
         child: SizedBox(
           width: double.infinity,

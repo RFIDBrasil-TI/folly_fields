@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
 import 'package:folly_fields/widgets/animated_search.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 ///
 ///
 ///
-class IconDataField extends FormFieldResponsive<IconData> {
+class IconDataField extends FormField<IconData> {
   final IconFieldController? controller;
   final Map<String, IconData> icons;
 
@@ -14,7 +13,8 @@ class IconDataField extends FormFieldResponsive<IconData> {
   ///
   ///
   IconDataField({
-    String labelPrefix = '',
+    Key? key,
+    String prefix = '',
     String label = '',
     this.controller,
     FormFieldValidator<IconData>? validator,
@@ -32,39 +32,24 @@ class IconDataField extends FormFieldResponsive<IconData> {
     double height = 128.0,
     double spaceBetween = 16.0,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
           initialValue: controller != null ? controller.value : initialValue,
           onSaved: onSaved,
           validator: enabled ? validator : (_) => null,
           enabled: enabled,
           autovalidateMode: autoValidateMode,
           builder: (FormFieldState<IconData> field) {
-            final IconDataFieldState state = field as IconDataFieldState;
+            final _IconDataFieldState state = field as _IconDataFieldState;
 
             final InputDecoration effectiveDecoration = (decoration ??
                     InputDecoration(
                       border: const OutlineInputBorder(),
                       filled: filled,
                       fillColor: fillColor,
-                      labelText:
-                          labelPrefix.isEmpty ? label : '$labelPrefix - $label',
+                      labelText: prefix.isEmpty ? label : '$prefix - $label',
                       counterText: '',
                       contentPadding: const EdgeInsets.fromLTRB(12, 0, 8, 12),
                     ))
@@ -81,10 +66,11 @@ class IconDataField extends FormFieldResponsive<IconData> {
                 decoration: effectiveDecoration.copyWith(
                   errorText: enabled ? field.errorText : null,
                 ),
+                isEmpty: false,
                 child: Column(
                   children: <Widget>[
                     Padding(
-                      padding: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.only(top: 16.0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: <Widget>[
@@ -93,10 +79,12 @@ class IconDataField extends FormFieldResponsive<IconData> {
                                 ? Container()
                                 : Padding(
                                     padding: const EdgeInsets.only(
-                                      left: 8,
-                                      right: 16,
+                                      left: 8.0,
+                                      right: 16.0,
                                     ),
                                     child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: <Widget>[
                                         FaIcon(
                                           state.value,
@@ -104,7 +92,7 @@ class IconDataField extends FormFieldResponsive<IconData> {
                                         ),
                                         Padding(
                                           padding:
-                                              const EdgeInsets.only(left: 8),
+                                              const EdgeInsets.only(left: 8.0),
                                           child: Text(
                                             state._effectiveController.name,
                                           ),
@@ -130,6 +118,7 @@ class IconDataField extends FormFieldResponsive<IconData> {
                               maxCrossAxisExtent: maxCrossAxisExtent,
                               mainAxisSpacing: mainAxisSpacing,
                               crossAxisSpacing: crossAxisSpacing,
+                              childAspectRatio: 1.0,
                             ),
                             itemCount: keys.length,
                             itemBuilder: (BuildContext context, int index) {
@@ -137,6 +126,7 @@ class IconDataField extends FormFieldResponsive<IconData> {
                               return GestureDetector(
                                 onTap: () => state.didChange(iconData),
                                 child: Align(
+                                  alignment: Alignment.center,
                                   child: FaIcon(
                                     iconData,
                                     size: iconSize,
@@ -159,13 +149,13 @@ class IconDataField extends FormFieldResponsive<IconData> {
   ///
   ///
   @override
-  IconDataFieldState createState() => IconDataFieldState();
+  _IconDataFieldState createState() => _IconDataFieldState();
 }
 
 ///
 ///
 ///
-class IconDataFieldState extends FormFieldState<IconData> {
+class _IconDataFieldState extends FormFieldState<IconData> {
   final TextEditingController _textController = TextEditingController();
   IconFieldController? _controller;
   List<String> names = <String>[];
@@ -320,9 +310,7 @@ class IconFieldController extends ValueNotifier<IconData?> {
   ///
   ///
   String get name {
-    if (value == null) {
-      return '';
-    }
+    if (value == null) return '';
 
     return _icons.keys.firstWhere(
       (String key) => _icons[key] == value,

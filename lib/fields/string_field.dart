@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:folly_fields/responsive/responsive.dart';
 
 ///
 ///
 ///
-class StringField extends StatelessResponsive {
-  final String labelPrefix;
+class StringField extends StatelessWidget {
+  final String prefix;
   final String label;
   final TextEditingController? controller;
   final TextInputType keyboard;
@@ -42,7 +41,8 @@ class StringField extends StatelessResponsive {
   ///
   ///
   const StringField({
-    this.labelPrefix = '',
+    Key? key,
+    this.prefix = '',
     this.label = '',
     this.controller,
     this.keyboard = TextInputType.text,
@@ -64,7 +64,7 @@ class StringField extends StatelessResponsive {
     this.autocorrect = true,
     this.enableSuggestions = true,
     this.textCapitalization = TextCapitalization.none,
-    this.scrollPadding = const EdgeInsets.all(20),
+    this.scrollPadding = const EdgeInsets.all(20.0),
     this.enableInteractiveSelection = true,
     this.filled = false,
     this.fillColor,
@@ -72,25 +72,9 @@ class StringField extends StatelessResponsive {
     this.readOnly = false,
     this.style,
     this.decoration,
-    this.padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
-        super(
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
-        );
+    this.padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
+        super(key: key);
 
   ///
   ///
@@ -107,7 +91,7 @@ class StringField extends StatelessResponsive {
 
     InputDecoration effectiveDecoration = (decoration ??
             InputDecoration(
-              labelText: labelPrefix.isEmpty ? label : '$labelPrefix - $label',
+              labelText: prefix.isEmpty ? label : '$prefix - $label',
               border: const OutlineInputBorder(),
               counterText: '',
               enabled: enabled,

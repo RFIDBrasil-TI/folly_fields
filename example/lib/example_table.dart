@@ -25,13 +25,13 @@ class ExampleTable extends StatefulWidget {
   ///
   ///
   @override
-  ExampleTableState createState() => ExampleTableState();
+  _ExampleTableState createState() => _ExampleTableState();
 }
 
 ///
 ///
 ///
-class ExampleTableState extends State<ExampleTable> {
+class _ExampleTableState extends State<ExampleTable> {
   final List<ExampleModel> list = List<ExampleModel>.generate(
       50, (int index) => ExampleModel.generate(seed: index));
 
@@ -40,7 +40,7 @@ class ExampleTableState extends State<ExampleTable> {
   final PhoneValidator phoneValidator = PhoneValidator();
   final MacAddressValidator macAddressValidator = MacAddressValidator();
 
-  final double rowHeight = 26;
+  final double rowHeight = 26.0;
 
   ///
   ///
@@ -71,20 +71,20 @@ class ExampleTableState extends State<ExampleTable> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: FollyTable(
           rowsCount: list.length,
           headerHeight: rowHeight,
           rowHeight: rowHeight,
           freezeColumns: 2,
           columnsSize: const <double>[
-            160,
-            230,
-            150,
-            200,
-            100,
-            150,
-            150,
+            160.0,
+            230.0,
+            150.0,
+            200.0,
+            100.0,
+            150.0,
+            150.0,
           ],
           headerColumns: <FollyCell>[
             FollyCell.textHeaderCenter('Text'),
@@ -119,7 +119,7 @@ class ExampleTableState extends State<ExampleTable> {
                 );
 
               case 4:
-                return FollyCell.number(model.decimal.doubleValue);
+                return FollyCell.number(model.decimal.value);
 
               case 5:
                 return FollyCell.text(

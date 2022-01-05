@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:folly_fields/crud/abstract_consumer.dart';
 import 'package:folly_fields/crud/abstract_model.dart';
@@ -13,7 +12,7 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
   ///
   ///
   ///
-  const BaseConsumerMock(List<String> routeName) : super(routeName);
+  const BaseConsumerMock();
 
   ///
   ///
@@ -22,12 +21,11 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
   Future<ConsumerPermission> checkPermission(
     BuildContext context,
     List<String>? paths,
-  ) {
-    if (paths?.join('/').contains('example_map_function_route') ?? false) {
-      return Future<ConsumerPermission>.value(
+  ) =>
+      Future<ConsumerPermission>.value(
         const ConsumerPermission(
-          name: 'Example Map Func. Route',
-          iconName: 'cube',
+          name: 'mock',
+          iconName: 'question',
           view: true,
           insert: true,
           update: true,
@@ -35,20 +33,6 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
           menu: true,
         ),
       );
-    }
-
-    return Future<ConsumerPermission>.value(
-      const ConsumerPermission(
-        name: 'mock',
-        iconName: 'question',
-        view: true,
-        insert: true,
-        update: true,
-        delete: true,
-        menu: true,
-      ),
-    );
-  }
 
   ///
   ///
@@ -59,9 +43,7 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
     Map<String, String> qsParam,
     bool forceOffline,
   ) async {
-    if (kDebugMode) {
-      print('mock list: $qsParam');
-    }
+    print('mock list: $qsParam');
 
     int first = int.tryParse(qsParam['f'] ?? '0') ?? 0;
     int qtd = int.tryParse(qsParam['q'] ?? '50') ?? 50;
@@ -70,7 +52,7 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
       const Duration(seconds: 2),
       () => List<T>.generate(
         qtd,
-        (int index) => ExampleModel.generate(seed: first + index) as T,
+        (int index) => (ExampleModel.generate(seed: first + index) as T),
       ),
     );
   }
@@ -80,9 +62,9 @@ abstract class BaseConsumerMock<T extends AbstractModel<Object>>
   ///
   @override
   Future<Map<T, String>> dropdownMap(
-    BuildContext context, {
-    Map<String, String> qsParam = const <String, String>{},
-  }) async =>
+    BuildContext context,
+    Map<String, String> qsParam,
+  ) async =>
       <T, String>{};
 
   ///

@@ -1,21 +1,20 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:folly_fields/crud/abstract_model.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:folly_fields/folly_fields.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 ///
 ///
 ///
-class ModelField<T extends AbstractModel<Object>>
-    extends FormFieldResponsive<T?> {
+class ModelField<T extends AbstractModel<Object>> extends FormField<T?> {
   final ModelEditingController<T>? controller;
 
   ///
   ///
   ///
   ModelField({
-    String labelPrefix = '',
+    Key? key,
+    String prefix = '',
     String label = '',
     this.controller,
     FormFieldValidator<T>? validator,
@@ -24,10 +23,10 @@ class ModelField<T extends AbstractModel<Object>>
     T? initialValue,
     bool enabled = true,
     AutovalidateMode autoValidateMode = AutovalidateMode.disabled,
-    // TODO(edufolly): onChanged
+    // TODO - onChanged
     TextInputAction? textInputAction,
     ValueChanged<String>? onFieldSubmitted,
-    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+    EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
     bool filled = false,
     Color? fillColor,
     Widget Function(BuildContext context)? routeBuilder,
@@ -35,39 +34,24 @@ class ModelField<T extends AbstractModel<Object>>
     Future<bool> Function(T? model)? acceptChange,
     Function(T model)? tapToVisualize,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
           initialValue: controller != null ? controller.model : initialValue,
           onSaved: onSaved,
           validator: enabled ? validator : (_) => null,
           enabled: enabled,
           autovalidateMode: autoValidateMode,
           builder: (FormFieldState<T?> field) {
-            final ModelFieldState<T> state = field as ModelFieldState<T>;
+            final _ModelFieldState<T> state = field as _ModelFieldState<T>;
 
             final InputDecoration effectiveDecoration = (decoration ??
                     InputDecoration(
                       border: const OutlineInputBorder(),
                       filled: filled,
                       fillColor: fillColor,
-                      labelText:
-                          labelPrefix.isEmpty ? label : '$labelPrefix - $label',
+                      labelText: prefix.isEmpty ? label : '$prefix - $label',
                       counterText: '',
                     ))
                 .applyDefaults(Theme.of(field.context).inputDecorationTheme)
@@ -93,13 +77,17 @@ class ModelField<T extends AbstractModel<Object>>
                 ),
                 keyboardType: TextInputType.datetime,
                 minLines: 1,
+                maxLines: 1,
+                obscureText: false,
                 textAlign: textAlign,
                 enabled: enabled,
                 textInputAction: textInputAction,
                 onSubmitted: onFieldSubmitted,
                 autocorrect: false,
                 enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
                 scrollPadding: scrollPadding,
+                enableInteractiveSelection: true,
                 style: enabled
                     ? null
                     : Theme.of(field.context).textTheme.subtitle1!.copyWith(
@@ -114,9 +102,7 @@ class ModelField<T extends AbstractModel<Object>>
                               state.context,
                               state.value,
                             );
-                            if (!go) {
-                              return;
-                            }
+                            if (!go) return;
                           }
 
                           T? selected = await Navigator.of(state.context).push(
@@ -136,7 +122,8 @@ class ModelField<T extends AbstractModel<Object>>
                             state.didChange(selected);
                           }
                         } catch (e, s) {
-                          if (kDebugMode) {
+                          if (FollyFields().isDebug) {
+                            // ignore: avoid_print
                             print('$e\n$s');
                           }
                         }
@@ -158,13 +145,13 @@ class ModelField<T extends AbstractModel<Object>>
   ///
   ///
   @override
-  ModelFieldState<T> createState() => ModelFieldState<T>();
+  _ModelFieldState<T> createState() => _ModelFieldState<T>();
 }
 
 ///
 ///
 ///
-class ModelFieldState<T extends AbstractModel<Object>>
+class _ModelFieldState<T extends AbstractModel<Object>>
     extends FormFieldState<T?> {
   ModelEditingController<T>? _controller;
 

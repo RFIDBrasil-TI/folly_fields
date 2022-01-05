@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 ///
 ///
 ///
@@ -14,14 +12,13 @@ abstract class Hashable {
   ]) {
     int it = iterable.fold(
       0,
+      // ignore: avoid_annotating_with_dynamic
       (int h, dynamic i) {
         int hash;
         if (i is List) {
           hash = hashIterable(i, deep + 1, debug);
         } else if (i is Map) {
           hash = hashIterable(i.values, deep + 1, debug);
-        } else if (i == null) {
-          hash = 0;
         } else {
           hash = i.hashCode;
         }
@@ -29,22 +26,19 @@ abstract class Hashable {
         int c = combine(h, hash);
 
         if (debug) {
-          if (kDebugMode) {
-            print((' ' * deep * 2) +
-                'h: $h => (${i.runtimeType}) $i: $hash => c: $c');
-          }
+          // ignore: avoid_print
+          print((' ' * deep * 2) +
+              'h: $h => (${i.runtimeType}) $i: $hash => c: $c');
         }
+
         return c;
       },
     );
 
     int f = finish(it);
 
-    if (debug) {
-      if (kDebugMode) {
-        print('finish: $f');
-      }
-    }
+    // ignore: avoid_print
+    if (debug) print('finish: $f');
 
     return f;
   }

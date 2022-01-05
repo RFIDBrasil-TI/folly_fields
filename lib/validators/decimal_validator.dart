@@ -22,7 +22,7 @@ class DecimalValidator extends AbstractValidator<Decimal>
     this.thousandSeparator = '.',
     this.rightSymbol = '',
     this.leftSymbol = '',
-  })  : assert(precision >= 0, 'precision must be positive or zero.'),
+  })  : assert(precision >= 0),
         super(
           <TextInputFormatter>[
             FilteringTextInputFormatter.digitsOnly,
@@ -42,7 +42,7 @@ class DecimalValidator extends AbstractValidator<Decimal>
   ///
   @override
   String format(Decimal decimal) {
-    List<String> textRepresentation = decimal.doubleValue
+    List<String> textRepresentation = decimal.value
         .toStringAsFixed(precision)
         .replaceAll('.', '')
         .split('')
@@ -60,7 +60,7 @@ class DecimalValidator extends AbstractValidator<Decimal>
       textRepresentation.insert(i, thousandSeparator);
     }
 
-    String masked = textRepresentation.reversed.join();
+    String masked = textRepresentation.reversed.join('');
 
     if (rightSymbol.isNotEmpty) {
       masked += rightSymbol;
@@ -123,7 +123,7 @@ class DecimalValidator extends AbstractValidator<Decimal>
 
     double d = double.parse(parts.join());
 
-    decimal.doubleValue = d;
+    decimal.value = d;
 
     return decimal;
   }

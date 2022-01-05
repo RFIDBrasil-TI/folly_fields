@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:folly_fields/fields/validator_field.dart';
 import 'package:folly_fields/validators/cep_validator.dart';
+import 'package:folly_fields/fields/validator_field.dart';
 
 ///
 ///
@@ -11,8 +11,9 @@ class CepField extends ValidatorField {
   ///
   ///
   CepField({
+    Key? key,
     String validatorMessage = 'Informe o CEP.',
-    String labelPrefix = '',
+    String prefix = '',
     String label = '',
     TextEditingController? controller,
     String? Function(String value)? validator,
@@ -28,7 +29,7 @@ class CepField extends ValidatorField {
     ValueChanged<String>? onFieldSubmitted,
     bool autocorrect = false,
     bool enableSuggestions = true,
-    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+    EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
     bool enableInteractiveSelection = true,
     bool filled = false,
     Color? fillColor,
@@ -36,20 +37,13 @@ class CepField extends ValidatorField {
     Iterable<String>? autofillHints,
     TextStyle? style,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
+          key: key,
           abstractValidator: CepValidator(),
           validatorMessage: validatorMessage,
-          labelPrefix: labelPrefix,
+          prefix: prefix,
           label: label,
           controller: controller,
           validator: validator,
@@ -77,12 +71,5 @@ class CepField extends ValidatorField {
           style: style,
           decoration: decoration,
           padding: padding,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
         );
 }

@@ -22,5 +22,5 @@ class Config extends AbstractConfig {
   ///
   ///
   ///
-  String get labelPrefix => '';
+  String get prefix => '';
 }

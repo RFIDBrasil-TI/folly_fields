@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
 
 ///
 ///
 ///
-class DropdownField<T> extends FormFieldResponsive<T> {
+class DropdownField<T> extends FormField<T> {
   final DropdownEditingController<T>? controller;
   final Map<T, String>? items;
 
@@ -12,7 +11,8 @@ class DropdownField<T> extends FormFieldResponsive<T> {
   ///
   ///
   DropdownField({
-    String labelPrefix = '',
+    Key? key,
+    String prefix = '',
     String label = '',
     this.controller,
     FormFieldValidator<T?>? validator,
@@ -42,48 +42,31 @@ class DropdownField<T> extends FormFieldResponsive<T> {
     bool autofocus = false,
     Color? dropdownColor,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         // assert(elevation != null),
         // assert(iconSize != null),
         // assert(isDense != null),
         // assert(isExpanded != null),
-        assert(
-            itemHeight == null || itemHeight >= kMinInteractiveDimension,
-            'itemHeight must be null or equal or greater '
-            'kMinInteractiveDimension.'),
+        assert(itemHeight == null || itemHeight >= kMinInteractiveDimension),
         // assert(autofocus != null),
         super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
           initialValue: controller != null ? controller.value : initialValue,
           onSaved: onSaved,
           validator: enabled ? validator : (_) => null,
           enabled: enabled,
           autovalidateMode: autoValidateMode,
           builder: (FormFieldState<T?> field) {
-            final DropdownFieldState<T> state = field as DropdownFieldState<T>;
+            final _DropdownFieldState<T> state =
+                field as _DropdownFieldState<T>;
 
             final InputDecoration effectiveDecoration = (decoration ??
                     InputDecoration(
                       border: const OutlineInputBorder(),
                       filled: filled,
                       fillColor: fillColor,
-                      labelText:
-                          labelPrefix.isEmpty ? label : '$labelPrefix - $label',
+                      labelText: prefix.isEmpty ? label : '$prefix - $label',
                       counterText: '',
                       focusColor: focusColor,
                     ))
@@ -146,13 +129,13 @@ class DropdownField<T> extends FormFieldResponsive<T> {
   ///
   ///
   @override
-  DropdownFieldState<T> createState() => DropdownFieldState<T>();
+  _DropdownFieldState<T> createState() => _DropdownFieldState<T>();
 }
 
 ///
 ///
 ///
-class DropdownFieldState<T> extends FormFieldState<T> {
+class _DropdownFieldState<T> extends FormFieldState<T> {
   DropdownEditingController<T>? _controller;
 
   ///

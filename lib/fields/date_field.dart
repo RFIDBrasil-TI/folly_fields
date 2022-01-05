@@ -1,15 +1,15 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:flutter/services.dart';
+import 'package:folly_fields/folly_fields.dart';
 import 'package:folly_fields/validators/date_validator.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 ///
 ///
+/// TODO - Herdar de DateTimeField.
 ///
-// TODO(edufolly): Herdar de DateTimeField?
-class DateField extends StatefulResponsive {
-  final String labelPrefix;
+class DateField extends StatefulWidget {
+  final String prefix;
   final String label;
   final DateEditingController? controller;
   final FormFieldValidator<DateTime>? validator;
@@ -35,14 +35,13 @@ class DateField extends StatefulResponsive {
   final bool required;
   final InputDecoration? decoration;
   final EdgeInsets padding;
-  final DatePickerEntryMode initialEntryMode;
-  final DatePickerMode initialDatePickerMode;
 
   ///
   ///
   ///
   const DateField({
-    this.labelPrefix = '',
+    Key? key,
+    this.prefix = '',
     this.label = '',
     this.controller,
     this.validator,
@@ -54,7 +53,7 @@ class DateField extends StatefulResponsive {
     this.focusNode,
     this.textInputAction,
     this.onFieldSubmitted,
-    this.scrollPadding = const EdgeInsets.all(20),
+    this.scrollPadding = const EdgeInsets.all(20.0),
     this.enableInteractiveSelection = true,
     this.firstDate,
     this.lastDate,
@@ -67,39 +66,21 @@ class DateField extends StatefulResponsive {
     this.mask = '##/##/####',
     this.required = true,
     this.decoration,
-    this.padding = const EdgeInsets.all(8),
-    this.initialEntryMode = DatePickerEntryMode.calendar,
-    this.initialDatePickerMode = DatePickerMode.day,
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
-        super(
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
-        );
+    this.padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
+        super(key: key);
 
   ///
   ///
   ///
   @override
-  DateFieldState createState() => DateFieldState();
+  _DateFieldState createState() => _DateFieldState();
 }
 
 ///
 ///
 ///
-class DateFieldState extends State<DateField> {
+class _DateFieldState extends State<DateField> {
   DateValidator? _validator;
   DateEditingController? _controller;
   FocusNode? _focusNode;
@@ -181,9 +162,9 @@ class DateFieldState extends State<DateField> {
               border: const OutlineInputBorder(),
               filled: widget.filled,
               fillColor: widget.fillColor,
-              labelText: widget.labelPrefix.isEmpty
+              labelText: widget.prefix.isEmpty
                   ? widget.label
-                  : '${widget.labelPrefix} - ${widget.label}',
+                  : '${widget.prefix} - ${widget.label}',
               counterText: '',
             ))
         .applyDefaults(Theme.of(context).inputDecorationTheme)
@@ -201,8 +182,6 @@ class DateFieldState extends State<DateField> {
                             _effectiveController.date ?? DateTime.now(),
                         firstDate: widget.firstDate ?? DateTime(1900),
                         lastDate: widget.lastDate ?? DateTime(2100),
-                        initialEntryMode: widget.initialEntryMode,
-                        initialDatePickerMode: widget.initialDatePickerMode,
                       );
 
                       fromButton = false;
@@ -213,7 +192,8 @@ class DateFieldState extends State<DateField> {
                         _effectiveFocusNode.requestFocus();
                       }
                     } catch (e, s) {
-                      if (kDebugMode) {
+                      if (FollyFields().isDebug) {
+                        // ignore: avoid_print
                         print('$e\n$s');
                       }
                     }
@@ -235,9 +215,7 @@ class DateFieldState extends State<DateField> {
 
                 String? message = _validator!.valid(value!);
 
-                if (message != null) {
-                  return message;
-                }
+                if (message != null) return message;
 
                 if (widget.validator != null) {
                   return widget.validator!(_validator!.parse(value));
@@ -248,11 +226,15 @@ class DateFieldState extends State<DateField> {
             : (_) => null,
         keyboardType: TextInputType.datetime,
         minLines: 1,
+        maxLines: 1,
+        obscureText: false,
         inputFormatters: _validator!.inputFormatters,
         textAlign: widget.textAlign,
         maxLength: widget.mask.length,
-        onSaved: (String? value) => widget.enabled && widget.onSaved != null
-            ? widget.onSaved!(_validator?.parse(value))
+        onSaved: widget.enabled
+            ? (String? value) => widget.onSaved != null
+                ? widget.onSaved!(_validator!.parse(value))
+                : null
             : null,
         enabled: widget.enabled,
         autovalidateMode: widget.autoValidateMode,
@@ -261,6 +243,7 @@ class DateFieldState extends State<DateField> {
         onFieldSubmitted: widget.onFieldSubmitted,
         autocorrect: false,
         enableSuggestions: false,
+        textCapitalization: TextCapitalization.none,
         scrollPadding: widget.scrollPadding,
         enableInteractiveSelection: widget.enableInteractiveSelection,
         readOnly: widget.readOnly,
@@ -299,5 +282,5 @@ class DateEditingController extends TextEditingController {
   ///
   ///
   set date(DateTime? date) =>
-      text = date == null ? '' : DateValidator().format(date);
+      text = (date == null ? '' : DateValidator().format(date));
 }

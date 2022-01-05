@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
 
 ///
 ///
 ///
-class BoolField extends FormFieldResponsive<bool> {
+class BoolField extends FormField<bool> {
   final BoolEditingController? controller;
-  final Function(bool)? onChanged;
 
   ///
   ///
   ///
   BoolField({
-    String labelPrefix = '',
+    Key? key,
+    String prefix = '',
     String label = '',
     this.controller,
     String? Function(bool value)? validator,
@@ -20,31 +19,17 @@ class BoolField extends FormFieldResponsive<bool> {
     bool? initialValue,
     bool enabled = true,
     AutovalidateMode autoValidateMode = AutovalidateMode.disabled,
-    this.onChanged,
+    // TODO - onChanged
+    // ValueChanged<String> onFieldSubmitted,
     bool filled = false,
     Color? fillColor,
     bool adaptive = false,
     Color? activeColor,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    TextOverflow textOverflow = TextOverflow.ellipsis,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
           initialValue: controller != null ? controller.value : initialValue,
           validator: enabled && validator != null
               ? (bool? value) => validator(value ?? false)
@@ -55,18 +40,18 @@ class BoolField extends FormFieldResponsive<bool> {
           enabled: enabled,
           autovalidateMode: autoValidateMode,
           builder: (FormFieldState<bool> field) {
-            final BoolFieldState state = field as BoolFieldState;
+            final _BoolFieldState state = field as _BoolFieldState;
 
             final InputDecoration effectiveDecoration = (decoration ??
                     InputDecoration(
                       border: const OutlineInputBorder(),
                       filled: filled,
                       fillColor: fillColor,
+                      labelText: null,
                       counterText: '',
-                      enabled: enabled,
                       contentPadding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 8,
+                        vertical: 10.0,
+                        horizontal: 8.0,
                       ),
                     ))
                 .applyDefaults(Theme.of(field.context).inputDecorationTheme);
@@ -77,55 +62,59 @@ class BoolField extends FormFieldResponsive<bool> {
             TextStyle textStyle =
                 Theme.of(field.context).textTheme.subtitle1!.copyWith(
                       color: textColor!.withOpacity(enabled ? 1 : 0.4),
-                      overflow: textOverflow,
                     );
+
+            Color accentColor =
+                activeColor ?? Theme.of(field.context).colorScheme.secondary;
 
             return Padding(
               padding: padding,
-              child: Builder(
-                builder: (BuildContext context) {
-                  return InkWell(
-                    canRequestFocus: false,
-                    onTap: enabled
-                        ? () => state.didChange(!(state.value ?? false))
-                        : null,
-                    child: InputDecorator(
-                      decoration: effectiveDecoration.copyWith(
-                        errorText: enabled ? field.errorText : null,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Expanded(
-                            child: Padding(
+              child: Focus(
+                canRequestFocus: false,
+                skipTraversal: true,
+                child: Builder(
+                  builder: (BuildContext context) {
+                    return InkWell(
+                      onTap: enabled
+                          ? () => state.didChange(!(state.value ?? false))
+                          : null,
+                      child: InputDecorator(
+                        decoration: effectiveDecoration.copyWith(
+                          errorText: enabled ? field.errorText : null,
+                        ),
+                        isEmpty: false,
+                        isFocused: Focus.of(context).hasFocus,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: 4.0,
                               ),
                               child: Text(
-                                labelPrefix.isEmpty
-                                    ? label
-                                    : '$labelPrefix - $label',
+                                prefix.isEmpty ? label : '$prefix - $label',
                                 style: textStyle,
                               ),
                             ),
-                          ),
-                          if (adaptive)
-                            Switch.adaptive(
-                              value: state._effectiveController.value,
-                              onChanged: enabled ? state.didChange : null,
-                              activeColor: activeColor,
-                            )
-                          else
-                            Switch(
-                              value: state._effectiveController.value,
-                              onChanged: enabled ? state.didChange : null,
-                              activeColor: activeColor,
-                            ),
-                        ],
+                            if (adaptive)
+                              Switch.adaptive(
+                                value: state._effectiveController.value,
+                                onChanged: enabled ? state.didChange : null,
+                                activeColor: accentColor,
+                              )
+                            else
+                              Switch(
+                                value: state._effectiveController.value,
+                                onChanged: enabled ? state.didChange : null,
+                                activeColor: accentColor,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             );
           },
@@ -135,13 +124,13 @@ class BoolField extends FormFieldResponsive<bool> {
   ///
   ///
   @override
-  BoolFieldState createState() => BoolFieldState();
+  _BoolFieldState createState() => _BoolFieldState();
 }
 
 ///
 ///
 ///
-class BoolFieldState extends FormFieldState<bool> {
+class _BoolFieldState extends FormFieldState<bool> {
   BoolEditingController? _controller;
 
   ///
@@ -215,7 +204,6 @@ class BoolFieldState extends FormFieldState<bool> {
     super.didChange(value);
     if (_effectiveController.value != value) {
       _effectiveController.value = value ?? false;
-      widget.onChanged?.call(value ?? false);
     }
   }
 
@@ -242,8 +230,5 @@ class BoolFieldState extends FormFieldState<bool> {
 ///
 ///
 class BoolEditingController extends ValueNotifier<bool> {
-  ///
-  ///
-  ///
   BoolEditingController({bool value = false}) : super(value);
 }

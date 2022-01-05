@@ -7,49 +7,42 @@ import 'package:folly_fields/util/hashable.dart';
 ///
 class Decimal with Hashable {
   final int precision;
-  double doubleValue;
+  double value;
 
   ///
   ///
   ///
   Decimal({
     required this.precision,
-    int? intValue,
+    int? initialValue,
     double? doubleValue,
-  })  : assert(precision >= 0, 'precision must be positive or zero'),
-        assert(intValue == null || doubleValue == null,
-            'intValue or doubleValue must be null'),
-        doubleValue =
-            doubleValue ?? (intValue ?? 0).toDouble() / pow(10, precision);
+  })  : assert(precision >= 0),
+        value = initialValue != null
+            ? initialValue.toDouble() / pow(10, precision)
+            : doubleValue ?? 0.0;
 
   ///
   ///
   ///
-  int get intValue =>
-      int.parse((doubleValue * pow(10, precision)).toStringAsFixed(0));
+  int get integer => int.parse((value * pow(10, precision)).toStringAsFixed(0));
 
   ///
   ///
-  ///
-  // TODO(edufolly): Formatar corretamente.
+  /// TODO - Formatar corretamente.
   @override
-  String toString() => doubleValue.toStringAsFixed(precision);
+  String toString() => value.toStringAsFixed(precision);
 
   ///
   ///
   ///
   @override
-  int get hashCode => finish(combine(precision, intValue));
+  int get hashCode => finish(combine(precision, integer));
 
   ///
   ///
   ///
   @override
-  bool operator ==(Object other) {
-    if (other is Decimal) {
-      return precision == other.precision && doubleValue == other.doubleValue;
-    }
-
-    return false;
-  }
+  bool operator ==(Object other) => other is Decimal
+      ? precision == other.precision && value == other.value
+      : false;
 }

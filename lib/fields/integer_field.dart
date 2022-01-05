@@ -10,9 +10,10 @@ class IntegerField extends StringField {
   ///
   ///
   IntegerField({
-    String labelPrefix = '',
+    Key? key,
+    String prefix = '',
     String label = '',
-    IntegerEditingController? controller,
+    TextEditingController? controller,
     FormFieldValidator<int?>? validator,
     TextAlign textAlign = TextAlign.end,
     int? maxLength,
@@ -24,7 +25,7 @@ class IntegerField extends StringField {
     FocusNode? focusNode,
     TextInputAction? textInputAction,
     ValueChanged<String>? onFieldSubmitted,
-    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+    EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
     bool enableInteractiveSelection = true,
     bool filled = false,
     Color? fillColor,
@@ -32,24 +33,17 @@ class IntegerField extends StringField {
     bool readOnly = false,
     TextStyle? style,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
-          labelPrefix: labelPrefix,
+          key: key,
+          prefix: prefix,
           label: label,
           controller: controller,
           keyboard: TextInputType.number,
           validator: (String? value) {
             if (enabled && validator != null) {
-              return validator(int.tryParse(value ?? ''));
+              return validator(int.tryParse(value ?? '0'));
             }
             return null;
           },
@@ -63,7 +57,7 @@ class IntegerField extends StringField {
           maxLength: maxLength,
           onSaved: (String? value) {
             if (enabled && onSaved != null) {
-              return onSaved(int.tryParse(value ?? ''));
+              return onSaved(int.tryParse(value ?? '0'));
             }
           },
           initialValue: initialValue?.toString(),
@@ -85,27 +79,5 @@ class IntegerField extends StringField {
           style: style,
           decoration: decoration,
           padding: padding,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
         );
-}
-
-///
-///
-///
-class IntegerEditingController extends TextEditingController {
-  ///
-  ///
-  ///
-  int? get integer => int.tryParse(text);
-
-  ///
-  ///
-  ///
-  set integer(int? integer) => text = integer.toString();
 }

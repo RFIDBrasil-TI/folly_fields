@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:folly_fields/crud/abstract_consumer.dart';
 import 'package:folly_fields/crud/abstract_function.dart';
@@ -8,12 +7,10 @@ import 'package:folly_fields/crud/abstract_model.dart';
 import 'package:folly_fields/crud/abstract_route.dart';
 import 'package:folly_fields/crud/abstract_ui_builder.dart';
 import 'package:folly_fields/folly_fields.dart';
-import 'package:folly_fields/util/safe_builder.dart';
+import 'package:folly_fields/util/icon_helper.dart';
 import 'package:folly_fields/widgets/circular_waiting.dart';
 import 'package:folly_fields/widgets/folly_dialogs.dart';
 import 'package:folly_fields/widgets/folly_divider.dart';
-import 'package:folly_fields/widgets/map_function_button.dart';
-import 'package:folly_fields/widgets/model_function_button.dart';
 import 'package:folly_fields/widgets/text_message.dart';
 import 'package:folly_fields/widgets/waiting_message.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -46,7 +43,7 @@ abstract class AbstractList<
   final Map<String, String> qsParam;
   final int itemsPerPage;
   final int qtdSuggestions;
-  final List<AbstractMapFunction>? mapFunctions;
+  final List<AbstractRoute> actionRoutes;
   final Future<Widget?> Function(
     BuildContext context,
     T model,
@@ -54,7 +51,7 @@ abstract class AbstractList<
     C consumer,
     bool edit,
   )? onLongPress;
-  final List<AbstractModelFunction<T>>? modelFunctions;
+  final Map<AbstractRoute, ActionFunction<T>>? actionFunctions;
   final String? searchFieldLabel;
   final TextStyle? searchFieldStyle;
   final InputDecorationTheme? searchFieldDecorationTheme;
@@ -72,28 +69,27 @@ abstract class AbstractList<
   ///
   ///
   const AbstractList({
+    Key? key,
     required this.selection,
     required this.multipleSelection,
-    required this.consumer,
-    required this.uiBuilder,
     this.invertSelection = false,
     this.forceOffline = false,
+    required this.consumer,
+    required this.uiBuilder,
     this.onAdd,
     this.onUpdate,
     this.qsParam = const <String, String>{},
     this.itemsPerPage = 50,
     this.qtdSuggestions = 15,
-    this.mapFunctions,
+    this.actionRoutes = const <AbstractRoute>[],
     this.onLongPress,
-    this.modelFunctions,
+    this.actionFunctions,
     this.searchFieldLabel,
     this.searchFieldStyle,
     this.searchFieldDecorationTheme,
     this.searchKeyboardType,
     this.searchTextInputAction = TextInputAction.search,
-    Key? key,
-  })  : assert(searchFieldStyle == null || searchFieldDecorationTheme == null,
-            'searchFieldStyle or searchFieldDecorationTheme must be null.'),
+  })  : assert(searchFieldStyle == null || searchFieldDecorationTheme == null),
         super(key: key);
 
   ///
@@ -111,13 +107,13 @@ abstract class AbstractList<
   ///
   ///
   @override
-  AbstractListState<T, UI, C> createState() => AbstractListState<T, UI, C>();
+  _AbstractListState<T, UI, C> createState() => _AbstractListState<T, UI, C>();
 }
 
 ///
 ///
 ///
-class AbstractListState<
+class _AbstractListState<
     T extends AbstractModel<Object>,
     UI extends AbstractUIBuilder<T>,
     C extends AbstractConsumer<T>> extends State<AbstractList<T, UI, C>> {
@@ -139,14 +135,8 @@ class AbstractListState<
 
   final Map<String, String> _qsParam = <String, String>{};
 
-  final Map<ConsumerPermission, AbstractMapFunction> effectiveMapFunctions =
-      <ConsumerPermission, AbstractMapFunction>{};
-
-  final Map<ConsumerPermission, AbstractModelFunction<T>>
-      effectiveModelFunctions =
-      <ConsumerPermission, AbstractModelFunction<T>>{};
-
-  FocusNode keyboardFocusNode = FocusNode();
+  final Map<ConsumerPermission, AbstractRoute> permissions =
+      <ConsumerPermission, AbstractRoute>{};
 
   ///
   ///
@@ -175,25 +165,15 @@ class AbstractListState<
   ///
   ///
   Future<void> _loadPermissions(BuildContext context) async {
-    if (widget.mapFunctions != null) {
-      for (AbstractMapFunction headerFunction in widget.mapFunctions!) {
-        ConsumerPermission permission = await widget.consumer
-            .checkPermission(context, headerFunction.routeName);
+    if (widget.actionFunctions != null) {
+      for (MapEntry<AbstractRoute, ActionFunction<T>> entry
+          in widget.actionFunctions!.entries) {
+        AbstractRoute route = entry.key;
 
-        if (permission.view) {
-          effectiveMapFunctions[permission] = headerFunction;
-        }
-      }
-    }
+        ConsumerPermission permission =
+            await widget.consumer.checkPermission(context, route.routeName);
 
-    if (widget.modelFunctions != null) {
-      for (AbstractModelFunction<T> rowFunction in widget.modelFunctions!) {
-        ConsumerPermission permission = await widget.consumer
-            .checkPermission(context, rowFunction.routeName);
-
-        if (permission.view) {
-          effectiveModelFunctions[permission] = rowFunction;
-        }
+        if (permission.view) permissions[permission] = route;
       }
     }
 
@@ -214,6 +194,15 @@ class AbstractListState<
     } else {
       _loading = true;
       _streamController.add(false);
+
+      // // ignore: unawaited_futures
+      // Future<dynamic>.delayed(Duration(milliseconds: 200)).then((_) {
+      //   _scrollController.animateTo(
+      //     _scrollController.position.maxScrollExtent,
+      //     curve: Curves.easeOut,
+      //     duration: const Duration(milliseconds: 300),
+      //   );
+      // });
     }
 
     try {
@@ -246,7 +235,8 @@ class AbstractListState<
       _streamController.add(true);
       _loading = false;
     } catch (e, s) {
-      if (kDebugMode) {
+      if (FollyFields().isDebug) {
+        // ignore: avoid_print
         print('$e\n$s');
       }
       _streamController.addError(e, s);
@@ -256,11 +246,11 @@ class AbstractListState<
   ///
   ///
   ///
-  Widget _getScaffoldTitle() => Text(
-        widget.selection
-            ? 'Selecionar ${widget.uiBuilder.superSingle}'
-            : widget.uiBuilder.superPlural,
-      );
+  Widget _getScaffoldTitle() {
+    return Text(widget.selection
+        ? 'Selecionar ${widget.uiBuilder.getSuperSingle()}'
+        : widget.uiBuilder.getSuperPlural());
+  }
 
   ///
   ///
@@ -331,9 +321,38 @@ class AbstractListState<
           if (FollyFields().isOnline) {
             _actions.add(
               IconButton(
-                tooltip: 'Pesquisar ${widget.uiBuilder.superSingle}',
+                tooltip: 'Pesquisar ${widget.uiBuilder.getSuperSingle()}',
                 icon: const Icon(Icons.search),
-                onPressed: _search,
+                onPressed: () {
+                  showSearch<T?>(
+                    context: context,
+                    delegate: InternalSearch<T, UI, C>(
+                      buildResultItem: _buildResultItem,
+                      canDelete: (T model) =>
+                          _delete &&
+                          FollyFields().isWeb &&
+                          widget.canDelete(model),
+                      qsParam: widget.qsParam,
+                      forceOffline: widget.forceOffline,
+                      itemsPerPage: widget.itemsPerPage,
+                      uiBuilder: widget.uiBuilder,
+                      consumer: widget.consumer,
+                      searchFieldLabel: widget.searchFieldLabel,
+                      searchFieldStyle: widget.searchFieldStyle,
+                      searchFieldDecorationTheme:
+                          widget.searchFieldDecorationTheme,
+                      keyboardType: widget.searchKeyboardType,
+                      textInputAction: widget.searchTextInputAction,
+                    ),
+                  ).then((T? entity) {
+                    if (entity != null) {
+                      _internalRoute(
+                        entity,
+                        !selections.containsKey(entity.id),
+                      );
+                    }
+                  });
+                },
               ),
             );
           }
@@ -343,7 +362,7 @@ class AbstractListState<
             if (widget.multipleSelection) {
               _actions.add(
                 IconButton(
-                  tooltip: 'Selecionar ${widget.uiBuilder.superPlural}',
+                  tooltip: 'Selecionar ${widget.uiBuilder.getSuperPlural()}',
                   icon: const FaIcon(FontAwesomeIcons.check),
                   onPressed: () => Navigator.of(context)
                       .pop(List<T>.from(selections.values)),
@@ -352,17 +371,32 @@ class AbstractListState<
             }
           } else {
             /// Action Routes
-            for (MapEntry<ConsumerPermission, AbstractMapFunction> entry
-                in effectiveMapFunctions.entries) {
+            for (AbstractRoute route in widget.actionRoutes) {
               _actions.add(
-                MapFunctionButton(
-                  mapFunction: entry.value,
-                  permission: entry.key,
-                  qsParam: _qsParam,
-                  selection: widget.selection,
-                  callback: (Map<String, String> map) {
-                    _qsParam.addAll(map);
-                    _loadData(context);
+                // TODO - Create an Action Route component.
+                FutureBuilder<ConsumerPermission>(
+                  future: widget.consumer.checkPermission(
+                    context,
+                    route.routeName,
+                  ),
+                  builder: (
+                    BuildContext context,
+                    AsyncSnapshot<ConsumerPermission> snapshot,
+                  ) {
+                    if (snapshot.hasData) {
+                      ConsumerPermission permission = snapshot.data!;
+
+                      return permission.view
+                          ? IconButton(
+                              tooltip: permission.name,
+                              icon: IconHelper.faIcon(permission.iconName),
+                              onPressed: () =>
+                                  Navigator.of(context).pushNamed(route.path),
+                            )
+                          : const SizedBox(width: 0, height: 0);
+                    }
+
+                    return const SizedBox(width: 0, height: 0);
                   },
                 ),
               );
@@ -373,29 +407,18 @@ class AbstractListState<
               if (FollyFields().isWeb) {
                 _actions.add(
                   IconButton(
-                    tooltip: 'Adicionar ${widget.uiBuilder.superSingle}',
+                    tooltip: 'Adicionar ${widget.uiBuilder.getSuperSingle()}',
                     icon: const FaIcon(FontAwesomeIcons.plus),
                     onPressed: _addEntity,
                   ),
                 );
               } else {
                 _fabAdd = FloatingActionButton(
-                  tooltip: 'Adicionar ${widget.uiBuilder.superSingle}',
+                  tooltip: 'Adicionar ${widget.uiBuilder.getSuperSingle()}',
                   onPressed: _addEntity,
                   child: const FaIcon(FontAwesomeIcons.plus),
                 );
               }
-            }
-
-            /// Botão da Legenda
-            if (widget.uiBuilder.listLegend.isNotEmpty) {
-              _actions.add(
-                IconButton(
-                  tooltip: widget.uiBuilder.listLegendTitle,
-                  icon: FaIcon(widget.uiBuilder.listLegendIcon),
-                  onPressed: _showListLegend,
-                ),
-              );
             }
           }
 
@@ -414,76 +437,68 @@ class AbstractListState<
                 child: _globalItems.isEmpty
                     ? TextMessage(
                         'Sem '
-                        '${widget.uiBuilder.superPlural.toLowerCase()}'
+                        '${widget.uiBuilder.getSuperPlural().toLowerCase()}'
                         ' até o momento.',
                       )
-                    : RawKeyboardListener(
-                        autofocus: true,
-                        focusNode: keyboardFocusNode,
-                        onKey: (RawKeyEvent event) {
-                          if (event.character != null) {
-                            _search(event.character);
-                          }
-                        },
-                        child: Scrollbar(
+                    : Scrollbar(
+                        controller: _scrollController,
+                        isAlwaysShown: FollyFields().isWeb,
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16.0),
                           controller: _scrollController,
-                          isAlwaysShown: FollyFields().isWeb,
-                          child: ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.all(16),
-                            controller: _scrollController,
-                            itemBuilder: (BuildContext context, int index) {
-                              /// Atualizando...
-                              if (index >= _globalItems.length) {
-                                return const SizedBox(
-                                  height: 80,
-                                  child: Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-                              }
+                          itemBuilder: (BuildContext context, int index) {
+                            /// Atualizando...
+                            if (index >= _globalItems.length) {
+                              return const SizedBox(
+                                height: 80,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
 
-                              T model = _globalItems[index];
+                            T model = _globalItems[index];
 
-                              if (_delete &&
-                                  FollyFields().isMobile &&
-                                  widget.canDelete(model)) {
-                                return Dismissible(
-                                  key: Key('key_${model.id}'),
-                                  direction: DismissDirection.endToStart,
-                                  background: Container(
-                                    color: Colors.red,
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 16),
-                                    child: const FaIcon(
-                                      FontAwesomeIcons.trashAlt,
-                                      color: Colors.white,
-                                    ),
+                            if (_delete &&
+                                FollyFields().isMobile &&
+                                widget.canDelete(model)) {
+                              return Dismissible(
+                                key: Key('key_${model.id}'),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  color: Colors.red,
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 16.0),
+                                  child: const FaIcon(
+                                    FontAwesomeIcons.trashAlt,
+                                    color: Colors.white,
                                   ),
-                                  confirmDismiss:
-                                      (DismissDirection direction) =>
-                                          _askDelete(),
-                                  onDismissed: (DismissDirection direction) =>
-                                      _deleteEntity(model),
-                                  child: _buildResultItem(
-                                    model: model,
-                                    selection: selections.containsKey(model.id),
-                                    canDelete: false,
-                                  ),
-                                );
-                              } else {
-                                return _buildResultItem(
+                                ),
+                                confirmDismiss: (DismissDirection direction) =>
+                                    _askDelete(),
+                                onDismissed: (DismissDirection direction) =>
+                                    _deleteEntity(model),
+                                child: _buildResultItem(
                                   model: model,
                                   selection: selections.containsKey(model.id),
-                                  canDelete: _delete &&
-                                      FollyFields().isWeb &&
-                                      widget.canDelete(model),
-                                );
-                              }
-                            },
-                            separatorBuilder: (_, __) => const FollyDivider(),
-                            itemCount: itemCount,
-                          ),
+                                  canDelete: false,
+                                  onTap: null,
+                                ),
+                              );
+                            } else {
+                              return _buildResultItem(
+                                model: model,
+                                selection: selections.containsKey(model.id),
+                                canDelete: _delete &&
+                                    FollyFields().isWeb &&
+                                    widget.canDelete(model),
+                                onTap: null,
+                              );
+                            }
+                          },
+                          separatorBuilder: (_, __) => const FollyDivider(),
+                          itemCount: itemCount,
                         ),
                       ),
               ),
@@ -510,50 +525,18 @@ class AbstractListState<
   ///
   ///
   ///
-  void _search([String? query]) {
-    showSearch<T?>(
-      context: context,
-      query: query,
-      delegate: InternalSearch<T, UI, C>(
-        buildResultItem: _buildResultItem,
-        canDelete: (T model) =>
-            _delete && FollyFields().isWeb && widget.canDelete(model),
-        qsParam: widget.qsParam,
-        forceOffline: widget.forceOffline,
-        itemsPerPage: widget.itemsPerPage,
-        uiBuilder: widget.uiBuilder,
-        consumer: widget.consumer,
-        searchFieldLabel: widget.searchFieldLabel,
-        searchFieldStyle: widget.searchFieldStyle,
-        searchFieldDecorationTheme: widget.searchFieldDecorationTheme,
-        keyboardType: widget.searchKeyboardType,
-        textInputAction: widget.searchTextInputAction,
-      ),
-    ).then(
-      (T? entity) {
-        if (entity != null) {
-          _internalRoute(
-            entity,
-            !selections.containsKey(entity.id),
-          );
-        }
-      },
-    );
-  }
-
-  ///
-  ///
-  ///
   Widget _buildResultItem({
     required T model,
     required bool selection,
     required bool canDelete,
     Future<void> Function()? afterDeleteRefresh,
-    Function(T model)? onTap,
+    Function? onTap,
   }) {
     return ListTile(
       leading: Column(
+        mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           widget.multipleSelection && onTap == null
               ? FaIcon(
@@ -569,19 +552,38 @@ class AbstractListState<
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          ...effectiveModelFunctions.entries.map(
-            (
-              MapEntry<ConsumerPermission, AbstractModelFunction<T>> entry,
-            ) =>
-                ModelFunctionButton<T>(
-              rowFunction: entry.value,
-              permission: entry.key,
-              model: model,
-              selection: widget.selection,
-              qsParam: _qsParam,
-              callback: (Object? object) => _loadData(context),
-            ),
+          ...permissions.entries.map(
+            (MapEntry<ConsumerPermission, AbstractRoute> entry) {
+              ConsumerPermission permission = entry.key;
+              ActionFunction<T> actionFunction =
+                  widget.actionFunctions![entry.value]!;
+              // TODO - Create an Action Route component.
+              return FutureBuilder<bool>(
+                initialData: false,
+                future: actionFunction.showButton(context, model),
+                builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+                  if (snapshot.hasData && snapshot.data!) {
+                    return IconButton(
+                      tooltip: permission.name,
+                      icon: IconHelper.faIcon(permission.iconName),
+                      onPressed: () async {
+                        Widget widget =
+                            await actionFunction.onPressed(context, model);
+
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<dynamic>(builder: (_) => widget),
+                        );
+
+                        await _loadData(context, clear: true);
+                      },
+                    );
+                  }
+                  return const SizedBox(width: 0, height: 0);
+                },
+              );
+            },
           ),
           if (canDelete)
             IconButton(
@@ -606,31 +608,27 @@ class AbstractListState<
   ///
   ///
   ///
-  Future<void> _internalLongPress(T model) async => _push(
-        await widget.onLongPress!(
-          context,
-          model,
-          widget.uiBuilder,
-          widget.consumer,
-          _update,
-        ),
-      );
+  void _internalLongPress(T model) async => _push(await widget.onLongPress!(
+        context,
+        model,
+        widget.uiBuilder,
+        widget.consumer,
+        _update,
+      ));
 
   ///
   ///
   ///
-  Future<void> _addEntity() async => _push(
-        await widget.onAdd!(
-          context,
-          widget.uiBuilder,
-          widget.consumer,
-        ),
-      );
+  void _addEntity() async => _push(await widget.onAdd!(
+        context,
+        widget.uiBuilder,
+        widget.consumer,
+      ));
 
   ///
   ///
   ///
-  Future<void> _internalRoute(T model, bool selected) async {
+  void _internalRoute(T model, bool selected) async {
     if (widget.selection) {
       if (widget.multipleSelection) {
         if (selected) {
@@ -653,14 +651,14 @@ class AbstractListState<
         _update,
       );
 
-      await _push(next);
+      _push(next);
     }
   }
 
   ///
   ///
   ///
-  Future<void> _push(Widget? widget, [bool clear = true]) async {
+  void _push(Widget? widget, [bool clear = true]) async {
     if (widget != null) {
       await Navigator.of(context).push(
         MaterialPageRoute<T>(builder: (_) => widget),
@@ -674,6 +672,7 @@ class AbstractListState<
   ///
   ///
   Future<bool> _deleteEntity(T model, {bool ask = false}) async {
+    // FIXME - Possível bug em erros na web.
     CircularWaiting wait = CircularWaiting(context);
     try {
       bool del = true;
@@ -700,7 +699,8 @@ class AbstractListState<
     } catch (e, s) {
       wait.close();
 
-      if (kDebugMode) {
+      if (FollyFields().isDebug) {
+        // ignore: avoid_print
         print('$e\n$s');
       }
 
@@ -717,58 +717,9 @@ class AbstractListState<
   ///
   Future<bool> _askDelete() => FollyDialogs.yesNoDialog(
         context: context,
+        title: 'Atenção',
         message: 'Deseja excluir?',
       );
-
-  ///
-  ///
-  ///
-  void _showListLegend() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Row(
-          children: <Widget>[
-            FaIcon(widget.uiBuilder.listLegendIcon),
-            const SizedBox(
-              width: 8,
-            ),
-            Text(widget.uiBuilder.listLegendTitle),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: widget.uiBuilder.listLegend.keys
-                .map(
-                  (String key) => ListTile(
-                    leading: FaIcon(
-                      FontAwesomeIcons.solidCircle,
-                      color: widget.uiBuilder.listLegend[key],
-                    ),
-                    title: Text(key),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-        actions: <Widget>[
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(widget.uiBuilder.listLegendButtonText),
-          ),
-        ],
-      ),
-    );
-  }
-
-  ///
-  ///
-  ///
-  @override
-  void dispose() {
-    keyboardFocusNode.dispose();
-    super.dispose();
-  }
 }
 
 ///
@@ -897,34 +848,45 @@ class InternalSearch<
         query = query.replaceAll('%', '');
       }
 
-      param['t'] = query;
+      param['t'] = query.toLowerCase();
 
       return Column(
         children: <Widget>[
           Expanded(
             child: uiBuilder.buildBackgroundContainer(
               context,
-              SafeFutureBuilder<List<W>>(
+              FutureBuilder<List<W>>(
                 future: consumer.list(context, param, forceOffline),
-                waitingMessage: 'Consultando...',
-                builder: (BuildContext context, List<W> data) => data.isNotEmpty
-                    ? ListView.separated(
+                builder:
+                    (BuildContext context, AsyncSnapshot<List<W>> snapshot) {
+                  if (snapshot.hasData) {
+                    if (snapshot.data!.isNotEmpty) {
+                      return ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
-                        itemBuilder: (BuildContext context, int index) =>
-                            buildResultItem(
-                          model: data[index],
-                          selection: false,
-                          canDelete: canDelete(data[index]),
-                          onTap: (W entity) => close(context, entity),
-                          afterDeleteRefresh: () async => query += '%',
-                        ),
+                        padding: const EdgeInsets.all(16.0),
+                        itemBuilder: (BuildContext context, int index) {
+                          return buildResultItem(
+                            model: snapshot.data![index],
+                            selection: false,
+                            canDelete: canDelete(snapshot.data![index]),
+                            onTap: (W entity) => close(context, entity),
+                            afterDeleteRefresh: () async => query += '%',
+                          );
+                        },
                         separatorBuilder: (_, __) => const FollyDivider(),
-                        itemCount: data.length,
-                      )
-                    : const Center(
+                        itemCount: snapshot.data!.length,
+                      );
+                    } else {
+                      return const Center(
                         child: Text('Nenhum documento.'),
-                      ),
+                      );
+                    }
+                  }
+
+                  // TODO - Tratar erro.
+
+                  return const WaitingMessage(message: 'Consultando...');
+                },
               ),
             ),
           ),
@@ -969,7 +931,7 @@ class InternalSearch<
           param.addAll(qsParam);
         }
 
-        param['t'] = query.replaceAll('%', '');
+        param['t'] = query.replaceAll('%', '').toLowerCase();
 
         param['q'] = itemsPerPage.toString();
 
@@ -978,16 +940,17 @@ class InternalSearch<
             Expanded(
               child: uiBuilder.buildBackgroundContainer(
                 context,
-                SafeFutureBuilder<List<W>>(
+                FutureBuilder<List<W>>(
                   future: consumer.list(context, param, forceOffline),
-                  waitingMessage: 'Consultando...',
-                  builder: (BuildContext context, List<W> data) => data
-                          .isNotEmpty
-                      ? Column(
+                  builder:
+                      (BuildContext context, AsyncSnapshot<List<W>> snapshot) {
+                    if (snapshot.hasData) {
+                      if (snapshot.data!.isNotEmpty) {
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Padding(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 'Sugestões:',
                                 style: TextStyle(
@@ -1000,27 +963,35 @@ class InternalSearch<
                             Expanded(
                               child: ListView.builder(
                                 itemBuilder: (BuildContext context, int index) {
-                                  W model = data[index];
+                                  W model = snapshot.data![index];
 
                                   return ListTile(
                                     title: uiBuilder.getSuggestionTitle(model),
                                     subtitle:
                                         uiBuilder.getSuggestionSubtitle(model),
                                     onTap: () {
-                                      _lastQuery = model.listSearchTerm;
+                                      _lastQuery = model.searchTerm;
                                       query = _lastQuery!;
                                       showResults(context);
                                     },
                                   );
                                 },
-                                itemCount: data.length,
+                                itemCount: snapshot.data!.length,
                               ),
                             ),
                           ],
-                        )
-                      : const Center(
+                        );
+                      } else {
+                        return const Center(
                           child: Text('Nenhum documento.'),
-                        ),
+                        );
+                      }
+                    }
+
+                    // TODO - Tratar erro.
+
+                    return const WaitingMessage(message: 'Consultando...');
+                  },
                 ),
               ),
             ),

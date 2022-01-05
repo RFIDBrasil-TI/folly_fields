@@ -2,23 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:folly_fields/crud/abstract_model.dart';
 import 'package:folly_fields/crud/abstract_ui_builder.dart';
 import 'package:folly_fields/folly_fields.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:folly_fields/widgets/add_button.dart';
 import 'package:folly_fields/widgets/field_group.dart';
 import 'package:folly_fields/widgets/folly_dialogs.dart';
-import 'package:folly_fields/widgets/table_button.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:sprintf/sprintf.dart';
 
 ///
+/// TODO - Create controller??
 ///
-///
-// TODO(edufolly): Create controller?
 class ListField<T extends AbstractModel<Object>,
-    UI extends AbstractUIBuilder<T>> extends FormFieldResponsive<List<T>> {
+    UI extends AbstractUIBuilder<T>> extends FormField<List<T>> {
   ///
   ///
   ///
   ListField({
+    Key? key,
     required List<T> initialValue,
     required UI uiBuilder,
     required Widget Function(BuildContext context, UI uiBuilder)
@@ -35,23 +34,9 @@ class ListField<T extends AbstractModel<Object>,
     String removeText = 'Deseja remover %s?',
     String emptyListText = 'Sem %s até o momento.',
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int Function(T a, T b)? listSort,
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
+    EdgeInsets padding = const EdgeInsets.all(8.0),
   }) : super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
           initialValue: initialValue,
           enabled: enabled,
           onSaved: enabled && onSaved != null
@@ -64,7 +49,7 @@ class ListField<T extends AbstractModel<Object>,
           builder: (FormFieldState<List<T>> field) {
             InputDecoration effectiveDecoration = (decoration ??
                     InputDecoration(
-                      labelText: uiBuilder.superPlural,
+                      labelText: uiBuilder.getSuperPlural(),
                       border: const OutlineInputBorder(),
                       counterText: '',
                       enabled: enabled,
@@ -80,13 +65,13 @@ class ListField<T extends AbstractModel<Object>,
 
                   /// Lista vazia.
                   SizedBox(
-                    height: 75,
+                    height: 75.0,
                     child: Center(
                       child: Text(
                         sprintf(
                           emptyListText,
-                          <dynamic>[uiBuilder.superPlural],
-                        ),
+                          <dynamic>[uiBuilder.getSuperPlural()],
+                        ).toString(),
                       ),
                     ),
                   )
@@ -105,9 +90,7 @@ class ListField<T extends AbstractModel<Object>,
                             if (beforeEdit != null) {
                               bool go =
                                   await beforeEdit(field.context, index, model);
-                              if (!go) {
-                                return;
-                              }
+                              if (!go) return;
                             }
 
                             if (routeEditBuilder != null) {
@@ -126,11 +109,6 @@ class ListField<T extends AbstractModel<Object>,
 
                               if (returned != null) {
                                 field.value![index] = returned;
-
-                                field.value!.sort(listSort ??
-                                    (T a, T b) =>
-                                        a.toString().compareTo(b.toString()));
-
                                 field.didChange(field.value);
                               }
                             }
@@ -146,19 +124,16 @@ class ListField<T extends AbstractModel<Object>,
                       .toList(),
 
                 /// Botão Adicionar
-                TableButton(
+                AddButton(
                   enabled: enabled,
-                  iconData: FontAwesomeIcons.plus,
                   label: sprintf(
                     addText,
-                    <dynamic>[uiBuilder.superSingle],
+                    <dynamic>[uiBuilder.getSuperSingle()],
                   ).toUpperCase(),
                   onPressed: () async {
                     if (beforeAdd != null) {
                       bool go = await beforeAdd(field.context);
-                      if (!go) {
-                        return;
-                      }
+                      if (!go) return;
                     }
 
                     final dynamic selected =
@@ -183,11 +158,11 @@ class ListField<T extends AbstractModel<Object>,
                             !field.value!.any((T element) {
                               return element.id == selected.id;
                             })) {
-                          field.value!.add(selected as T);
+                          field.value!.add((selected as T));
                         }
                       }
 
-                      field.value!.sort(listSort ??
+                      field.value!.sort(
                           (T a, T b) => a.toString().compareTo(b.toString()));
 
                       field.didChange(field.value);
@@ -217,6 +192,7 @@ class _MyListTile<T extends AbstractModel<Object>,
   ///
   ///
   const _MyListTile({
+    Key? key,
     required this.index,
     required this.model,
     required this.uiBuilder,
@@ -224,7 +200,6 @@ class _MyListTile<T extends AbstractModel<Object>,
     required this.onDelete,
     required this.removeText,
     required this.enabled,
-    Key? key,
   }) : super(key: key);
 
   ///
@@ -235,13 +210,13 @@ class _MyListTile<T extends AbstractModel<Object>,
     return FollyFields().isWeb || enabled
         ? _internalTile(context, index, model)
         : Dismissible(
-            // TODO(edufolly): Test the key in tests.
+            // TODO - Test the key in tests.
             key: Key('key_${index}_${model.id}'),
             direction: DismissDirection.endToStart,
             background: Container(
               color: Colors.red,
               alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 8.0),
               child: const FaIcon(
                 FontAwesomeIcons.trashAlt,
                 color: Colors.white,
@@ -261,6 +236,7 @@ class _MyListTile<T extends AbstractModel<Object>,
     return ListTile(
       leading: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           uiBuilder.getLeading(model),
         ],
@@ -281,20 +257,10 @@ class _MyListTile<T extends AbstractModel<Object>,
   ///
   ///
   ///
-  Future<void> _delete(
-    BuildContext context,
-    T model, {
-    bool ask = false,
-  }) async {
+  void _delete(BuildContext context, T model, {bool ask = false}) async {
     bool del = true;
-
-    if (ask) {
-      del = (await _askDelete(context)) ?? false;
-    }
-
-    if (del) {
-      onDelete(model);
-    }
+    if (ask) del = (await _askDelete(context)) ?? false;
+    if (del) onDelete(model);
   }
 
   ///
@@ -302,6 +268,6 @@ class _MyListTile<T extends AbstractModel<Object>,
   ///
   Future<bool?> _askDelete(BuildContext context) => FollyDialogs.yesNoDialog(
         context: context,
-        message: sprintf(removeText, <dynamic>[uiBuilder.superSingle]),
+        message: sprintf(removeText, <dynamic>[uiBuilder.getSuperSingle()]),
       );
 }

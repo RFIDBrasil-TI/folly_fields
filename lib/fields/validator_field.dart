@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:folly_fields/fields/string_field.dart';
 import 'package:folly_fields/validators/abstract_validator.dart';
+import 'package:folly_fields/fields/string_field.dart';
 
 ///
 ///
@@ -11,9 +11,10 @@ class ValidatorField extends StringField {
   ///
   ///
   ValidatorField({
+    Key? key,
     required AbstractValidator<String> abstractValidator,
     required String validatorMessage,
-    String labelPrefix = '',
+    String prefix = '',
     String label = '',
     TextEditingController? controller,
     String? Function(String value)? validator,
@@ -31,7 +32,7 @@ class ValidatorField extends StringField {
     bool autocorrect = false,
     bool enableSuggestions = false,
     TextCapitalization textCapitalization = TextCapitalization.none,
-    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+    EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
     bool enableInteractiveSelection = true,
     bool filled = false,
     Color? fillColor,
@@ -39,25 +40,11 @@ class ValidatorField extends StringField {
     Iterable<String>? autofillHints,
     TextStyle? style,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
           key: key,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          labelPrefix: labelPrefix,
+          prefix: prefix,
           label: label,
           controller: controller,
           keyboard: abstractValidator.keyboard,

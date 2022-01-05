@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:folly_fields/fields/validator_field.dart';
 import 'package:folly_fields/validators/email_validator.dart';
+import 'package:folly_fields/fields/validator_field.dart';
 
 ///
 ///
@@ -11,8 +11,9 @@ class EmailField extends ValidatorField {
   ///
   ///
   EmailField({
+    Key? key,
     String validatorMessage = 'Informe o e-mail.',
-    String labelPrefix = '',
+    String prefix = '',
     String label = '',
     TextEditingController? controller,
     String? Function(String value)? validator,
@@ -29,7 +30,7 @@ class EmailField extends ValidatorField {
     ValueChanged<String>? onFieldSubmitted,
     bool autocorrect = false,
     bool enableSuggestions = true,
-    EdgeInsets scrollPadding = const EdgeInsets.all(20),
+    EdgeInsets scrollPadding = const EdgeInsets.all(20.0),
     bool enableInteractiveSelection = true,
     bool filled = false,
     Color? fillColor,
@@ -37,20 +38,13 @@ class EmailField extends ValidatorField {
     Iterable<String>? autofillHints,
     TextStyle? style,
     InputDecoration? decoration,
-    EdgeInsets padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
+    EdgeInsets padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
         super(
+          key: key,
           abstractValidator: EmailValidator(),
           validatorMessage: validatorMessage,
-          labelPrefix: labelPrefix,
+          prefix: prefix,
           label: label,
           controller: controller,
           validator: validator,
@@ -78,12 +72,5 @@ class EmailField extends ValidatorField {
           style: style,
           decoration: decoration,
           padding: padding,
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
         );
 }

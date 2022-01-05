@@ -1,8 +1,8 @@
 import 'package:cpf_cnpj_validator/cnpj_validator.dart';
 import 'package:cpf_cnpj_validator/cpf_validator.dart';
 import 'package:flutter/services.dart';
-import 'package:folly_fields/util/mask_text_input_formatter.dart';
 import 'package:folly_fields/validators/abstract_validator.dart';
+import 'package:folly_fields/util/mask_text_input_formatter.dart';
 
 ///
 ///
@@ -48,10 +48,4 @@ class CpfCnpjValidator extends AbstractValidator<String> {
         ? CNPJValidator.isValid(value, false)
         : CPFValidator.isValid(value, false);
   }
-
-  ///
-  ///
-  ///
-  @override
-  TextInputType get keyboard => TextInputType.number;
 }

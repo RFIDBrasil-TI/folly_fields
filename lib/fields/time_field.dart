@@ -1,14 +1,14 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:flutter/services.dart';
+import 'package:folly_fields/folly_fields.dart';
 import 'package:folly_fields/validators/time_validator.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 ///
 ///
 ///
-class TimeField extends StatefulResponsive {
-  final String labelPrefix;
+class TimeField extends StatefulWidget {
+  final String prefix;
   final String label;
   final TimeEditingController? controller;
   final FormFieldValidator<TimeOfDay>? validator;
@@ -29,13 +29,13 @@ class TimeField extends StatefulResponsive {
   final bool required;
   final InputDecoration? decoration;
   final EdgeInsets padding;
-  final TimePickerEntryMode initialEntryMode;
 
   ///
   ///
   ///
   const TimeField({
-    this.labelPrefix = '',
+    Key? key,
+    this.prefix = '',
     this.label = '',
     this.controller,
     this.validator,
@@ -47,7 +47,7 @@ class TimeField extends StatefulResponsive {
     this.focusNode,
     this.textInputAction,
     this.onFieldSubmitted,
-    this.scrollPadding = const EdgeInsets.all(20),
+    this.scrollPadding = const EdgeInsets.all(20.0),
     this.enableInteractiveSelection = true,
     this.filled = false,
     this.fillColor,
@@ -55,38 +55,21 @@ class TimeField extends StatefulResponsive {
     this.lostFocus,
     this.required = true,
     this.decoration,
-    this.padding = const EdgeInsets.all(8),
-    this.initialEntryMode = TimePickerEntryMode.dial,
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
-        super(
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
-        );
+    this.padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
+        super(key: key);
 
   ///
   ///
   ///
   @override
-  TimeFieldState createState() => TimeFieldState();
+  _TimeFieldState createState() => _TimeFieldState();
 }
 
 ///
 ///
 ///
-class TimeFieldState extends State<TimeField> {
+class _TimeFieldState extends State<TimeField> {
   final TimeValidator validator = TimeValidator();
 
   TimeEditingController? _controller;
@@ -162,9 +145,9 @@ class TimeFieldState extends State<TimeField> {
               border: const OutlineInputBorder(),
               filled: widget.filled,
               fillColor: widget.fillColor,
-              labelText: widget.labelPrefix.isEmpty
+              labelText: widget.prefix.isEmpty
                   ? widget.label
-                  : '${widget.labelPrefix} - ${widget.label}',
+                  : '${widget.prefix} - ${widget.label}',
               counterText: '',
             ))
         .applyDefaults(Theme.of(context).inputDecorationTheme)
@@ -180,7 +163,6 @@ class TimeFieldState extends State<TimeField> {
                         context: context,
                         initialTime:
                             _effectiveController.time ?? TimeOfDay.now(),
-                        initialEntryMode: widget.initialEntryMode,
                       );
 
                       fromButton = false;
@@ -191,7 +173,8 @@ class TimeFieldState extends State<TimeField> {
                         _effectiveFocusNode.requestFocus();
                       }
                     } catch (e, s) {
-                      if (kDebugMode) {
+                      if (FollyFields().isDebug) {
+                        // ignore: avoid_print
                         print('$e\n$s');
                       }
                     }
@@ -213,9 +196,7 @@ class TimeFieldState extends State<TimeField> {
 
                 String? message = validator.valid(value!);
 
-                if (message != null) {
-                  return message;
-                }
+                if (message != null) return message;
 
                 if (widget.validator != null) {
                   return widget.validator!(validator.parse(value));
@@ -226,11 +207,15 @@ class TimeFieldState extends State<TimeField> {
             : (_) => null,
         keyboardType: TextInputType.datetime,
         minLines: 1,
+        maxLines: 1,
+        obscureText: false,
         inputFormatters: validator.inputFormatters,
         textAlign: widget.textAlign,
         maxLength: 5,
-        onSaved: (String? value) => widget.enabled && widget.onSaved != null
-            ? widget.onSaved!(validator.parse(value))
+        onSaved: widget.enabled
+            ? (String? value) => widget.onSaved != null
+                ? widget.onSaved!(validator.parse(value))
+                : null
             : null,
         enabled: widget.enabled,
         autovalidateMode: widget.autoValidateMode,
@@ -239,6 +224,7 @@ class TimeFieldState extends State<TimeField> {
         onFieldSubmitted: widget.onFieldSubmitted,
         autocorrect: false,
         enableSuggestions: false,
+        textCapitalization: TextCapitalization.none,
         scrollPadding: widget.scrollPadding,
         enableInteractiveSelection: widget.enableInteractiveSelection,
         readOnly: widget.readOnly,
@@ -277,5 +263,5 @@ class TimeEditingController extends TextEditingController {
   ///
   ///
   set time(TimeOfDay? time) =>
-      text = time == null ? '' : TimeValidator().format(time);
+      text = (time == null ? '' : TimeValidator().format(time));
 }

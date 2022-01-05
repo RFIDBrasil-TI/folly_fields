@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:folly_fields/responsive/responsive.dart';
+import 'package:flutter/widgets.dart';
 import 'package:folly_fields/util/decimal.dart';
 import 'package:folly_fields/validators/decimal_validator.dart';
 
 ///
 ///
 ///
-class DecimalField extends StatefulResponsive {
-  final String labelPrefix;
+class DecimalField extends StatefulWidget {
+  final String prefix;
   final String label;
   final DecimalEditingController? controller;
   final Decimal? initialValue;
@@ -33,7 +33,8 @@ class DecimalField extends StatefulResponsive {
   ///
   ///
   const DecimalField({
-    this.labelPrefix = '',
+    Key? key,
+    this.prefix = '',
     this.label = '',
     this.controller,
     this.validator,
@@ -46,44 +47,28 @@ class DecimalField extends StatefulResponsive {
     this.focusNode,
     this.textInputAction,
     this.onFieldSubmitted,
-    this.scrollPadding = const EdgeInsets.all(20),
+    this.scrollPadding = const EdgeInsets.all(20.0),
     this.enableInteractiveSelection = true,
     this.filled = false,
     this.fillColor,
     this.lostFocus,
     this.readOnly = false,
     this.decoration,
-    this.padding = const EdgeInsets.all(8),
-    int? sizeExtraSmall,
-    int? sizeSmall,
-    int? sizeMedium,
-    int? sizeLarge,
-    int? sizeExtraLarge,
-    double? minHeight,
-    Key? key,
-  })  : assert(initialValue == null || controller == null,
-            'initialValue or controller must be null.'),
-        super(
-          sizeExtraSmall: sizeExtraSmall,
-          sizeSmall: sizeSmall,
-          sizeMedium: sizeMedium,
-          sizeLarge: sizeLarge,
-          sizeExtraLarge: sizeExtraLarge,
-          minHeight: minHeight,
-          key: key,
-        );
+    this.padding = const EdgeInsets.all(8.0),
+  })  : assert(initialValue == null || controller == null),
+        super(key: key);
 
   ///
   ///
   ///
   @override
-  DecimalFieldState createState() => DecimalFieldState();
+  _DecimalFieldState createState() => _DecimalFieldState();
 }
 
 ///
 ///
 ///
-class DecimalFieldState extends State<DecimalField> {
+class _DecimalFieldState extends State<DecimalField> {
   DecimalEditingController? _controller;
   FocusNode? _focusNode;
 
@@ -138,13 +123,8 @@ class DecimalFieldState extends State<DecimalField> {
   void dispose() {
     _effectiveFocusNode.removeListener(_handleFocus);
 
-    if (_controller != null) {
-      _controller!.dispose();
-    }
-
-    if (_focusNode != null) {
-      _focusNode!.dispose();
-    }
+    if (_controller != null) _controller!.dispose();
+    if (_focusNode != null) _focusNode!.dispose();
 
     super.dispose();
   }
@@ -159,9 +139,9 @@ class DecimalFieldState extends State<DecimalField> {
               border: const OutlineInputBorder(),
               filled: widget.filled,
               fillColor: widget.fillColor,
-              labelText: widget.labelPrefix.isEmpty
+              labelText: widget.prefix.isEmpty
                   ? widget.label
-                  : '${widget.labelPrefix} - ${widget.label}',
+                  : '${widget.prefix} - ${widget.label}',
               counterText: '',
             ))
         .applyDefaults(Theme.of(context).inputDecorationTheme);
@@ -178,6 +158,8 @@ class DecimalFieldState extends State<DecimalField> {
             : null,
         keyboardType: _effectiveController.validator.keyboard,
         minLines: 1,
+        maxLines: 1,
+        obscureText: false,
         inputFormatters: _effectiveController.validator.inputFormatters,
         textAlign: widget.textAlign,
         maxLength: widget.maxLength,
@@ -191,6 +173,7 @@ class DecimalFieldState extends State<DecimalField> {
         onFieldSubmitted: widget.onFieldSubmitted,
         autocorrect: false,
         enableSuggestions: false,
+        textCapitalization: TextCapitalization.none,
         scrollPadding: widget.scrollPadding,
         enableInteractiveSelection: widget.enableInteractiveSelection,
         readOnly: widget.readOnly,
@@ -210,7 +193,7 @@ class DecimalFieldState extends State<DecimalField> {
 class DecimalEditingController extends TextEditingController {
   final DecimalValidator validator;
 
-  double _lastValue = 0;
+  double _lastValue = 0.0;
 
   ///
   ///
@@ -225,11 +208,11 @@ class DecimalEditingController extends TextEditingController {
   ///
   ///
   set decimal(Decimal dec) {
-    // TODO(edufolly): Remover esse limitador?
-    if (dec.doubleValue.toStringAsFixed(0).length > 12) {
-      dec.doubleValue = _lastValue;
+    /// TODO - Remover esse limitador?
+    if (dec.value.toStringAsFixed(0).length > 12) {
+      dec.value = _lastValue;
     } else {
-      _lastValue = dec.doubleValue;
+      _lastValue = dec.value;
     }
 
     String masked = validator.format(dec);
@@ -261,30 +244,6 @@ class DecimalEditingController extends TextEditingController {
   ///
   Decimal parse(String? text) =>
       validator.parse(text) ?? Decimal(precision: validator.precision);
-
-  ///
-  ///
-  ///
-  set intValue(int intValue) {
-    decimal = Decimal(precision: validator.precision, intValue: intValue);
-  }
-
-  ///
-  ///
-  ///
-  int get intValue => decimal.intValue;
-
-  ///
-  ///
-  ///
-  set doubleValue(double doubleValue) {
-    decimal = Decimal(precision: validator.precision, doubleValue: doubleValue);
-  }
-
-  ///
-  ///
-  ///
-  double get doubleValue => decimal.doubleValue;
 
   ///
   ///

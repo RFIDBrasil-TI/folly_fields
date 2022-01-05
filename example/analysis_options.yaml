@@ -22,6 +22,7 @@ linter:
     annotate_overrides: true
     # avoid_annotating_with_dynamic: true
     avoid_multiple_declarations_per_line: true
+    avoid_print: false
     avoid_types_as_parameter_names: true
     camel_case_types: true
     empty_constructor_bodies: true
